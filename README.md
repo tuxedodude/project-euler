@@ -1,2 +1,2 @@
 # project-euler
-Solutions to project euler, primarily in Golang.
+Solutions to Project Euler, primarily in Golang.
