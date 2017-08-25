@@ -8,92 +8,79 @@ For example, 3^2 + 4^2 = 9 + 16 = 25 = 5^2.
 
 There exists exactly one Pythagorean triplet for which a + b + c = 1000.
 Find the product abc.*/
-
 package main
 
 import (
 	"fmt"
-	//"math"
 )
 
-//runs callback as each prime is generated, up to n inclusive
-func sieve_apply(n int, callback func(int)) {
-
-	if n < 2 {
-		return
+func gcd(x, y int) int {
+	if x == 0 || y == 0 {
+		return 0
 	}
 
-	//make sieve
-	s := make([]bool, n+1)
+	if x < y {
+		x, y = y, x
+	}
 
-	for i := 2; i <= n; i++ {
-		if s[i] == false { //this element is prime
-			callback(i) // callback on prime number
-			//mark all multiples
-			for j := 1; j*i <= n; j++ {
-				s[i*j] = true
+	for ; x%y != 0; x, y = y, x%y {
+		//fmt.Println(">", x, "%", y, "=", x%y)
+	}
+	return y
+}
+
+//a = mn, b = (m^2 - n^2) / 2, c = (m^2 + n^2) / 2
+// Assumes m > n > 0; m and n are odd
+func make_triple(m, n int) []int {
+	mm, nn := m*m, n*n
+	return []int{m * n, (mm - nn) / 2, (mm + nn) / 2}
+}
+
+// execute callback function on each generated triple up to upper bound;
+// return value of TRUE will stop computation
+func pythagorean_triples(upperbound int, cb func([]int) bool) {
+
+	for m := 3; m < upperbound; m += 2 {
+		for n := 1; n < m; n += 2 {
+			t := make_triple(m, n)
+
+			if cb(t) {
+				return
 			}
 		}
 	}
 }
 
-// return slice containing all prime numbers up to n inclusive,
-// and a map whose keys are the same primes.
-func _primes(n int) []int {
-	p := make([]int, 0)
+// returns slice containing pythagorean triple
+// s.t. a+b+c == n; returns empty slice if none found
+func Solve(n int) []int {
+	var triple []int
 
-	sieve_apply(n,
-		func(prime int) {
-			p = append(p, prime)
+	pythagorean_triples(n,
+		func(t []int) bool {
+			s := sum(t)
+			if s == n {
+				triple = t
+			}
+			return s == n
 		})
 
-	return p
+	return triple
 }
 
-func no_common_factor(p, q int, primes []int) bool {
-	for i := 0; i < len(primes) && primes[i] <= q; i++ {
-		if (p%primes[i]) == 0 && (q%primes[i]) == 0 {
-			//common divisor
-			return false
-		}
-	}
-	return true
+func coprime(x, y int) bool {
+	return gcd(x, y) == 1
 }
 
-func make_triple(p, q int) (int, int, int) {
-
-	pp, qq := p*p, q*q
-
-	a := p * q
-	b := (pp - qq) / 2
-	c := (pp + qq) / 2
-
-	if a < b {
-		return a, b, c
-	} else {
-		return b, a, c
+func sum(s []int) int {
+	sum := 0
+	for _, e := range s {
+		sum += e
 	}
-}
-
-func Solve(n int) []int {
-	//primes := _primes(n)
-
-	for p := 3; p < n/3; p += 2 {
-		for q := 1; q < p; q += 2 {
-
-			a, b, c := make_triple(p, q)
-			if c*c == a*a+b*b {
-				fmt.Println(a, b, c)
-				if n%(a+b+c) == 0 {
-					return []int{a, b, c}
-				}
-			}
-
-		}
-	}
-	return []int{}
+	return sum
 }
 
 func main() {
-	fmt.Println(Solve(100))
+	fmt.Println(Solve(1000))
 }
+
