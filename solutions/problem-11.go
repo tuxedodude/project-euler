@@ -99,27 +99,50 @@ func max_horizontals(grid [][]int, n int) int {
 	return max
 }
 
-
 func transpose(grid [][]int) [][]int {
 	if len(grid) == 0 {
 		return [][]int{}
 	}
 
-	rows := len(grid)
-	var cols
-	for _, ele := range grid {
-		if len(ele)
+	rows, cols := len(grid), 0
+
+	// gather smallest column dimension
+	for i, ele := range grid {
+		dim := len(ele)
+		if dim == 0 {
+			return [][]int{}
+		} else if i == 0 || dim < cols {
+			cols = dim
+		}
 	}
+
+	// allocate memory
+	gt := make([][]int, cols)
+	for i := 0; i < len(gt); i++ {
+		gt[i] = make([]int, rows)
+	}
+
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			gt[j][i] = grid[i][j]
+		}
+	}
+	return gt
 }
 
 func max_verticals(grid [][]int, n int) int {
-	max := 0
-	cols := make([][]int, len(grid))
+	return max_horizontals(transpose(grid), n)
+}
+
+func diagonals(grid [][]int) [][]int {
+	return [][]int{}
 }
 
 func main() {
 	s := parse_grid(GRID)
-	//s := []int{1, 2, 3, 4, 4, 5, 7, 0, 9, 10}
-	//fmt.Println(s)
-	fmt.Println(max_horizontals(s, 4))
+
+	h := max_horizontals(s, 4)
+	v := max_verticals(s, 4)
+
+	fmt.Println(h, v)
 }
