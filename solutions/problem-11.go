@@ -36,6 +36,10 @@ const GRID string = `08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
 20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54
 01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48`
 
+var calls_to_product int
+
+const SIMPLE_MAX_PRODUCT bool = false
+
 // assumes rows are denoted by newlines
 // TO DO: split on white space only, then
 // make grid of r, c dimension
@@ -61,12 +65,18 @@ func parse_grid(str string) [][]int {
 	return grid
 }
 
+func countcalls() {
+	calls_to_product++
+}
+
 func product(s []int) int {
+	defer countcalls()
 	if len(s) == 0 {
 		return 0
 	}
 	p := 1
 	for i := len(s) - 1; i >= 0; i-- {
+		// any zero == 0 product
 		if s[i] == 0 {
 			return 0
 		}
@@ -75,19 +85,87 @@ func product(s []int) int {
 	return p
 }
 
+func product2(s []int) (prod, skip int) {
+	defer countcalls()
+
+	if len(s) == 0 {
+		return 0, 0
+	}
+	p := 1
+	for i := len(s) - 1; i >= 0; i-- {
+		// any zero == 0 product
+		if s[i] == 0 {
+			return 0, i
+		}
+		p *= s[i]
+	}
+	return p, 0
+}
+
 /* finds largest product of n consecutive elements of slice s */
-func max_product(s []int, n int) int {
+func max_product_v1(s []int, n int) int {
+
+	if n > len(s) {
+		return 0
+	}
 
 	max := 0
 	for i := 0; i+n <= len(s); i++ {
 
 		consec_n := s[i : i+n]
+		//fmt.Println(consec_n)
 		p := product(consec_n)
+
 		if p > max {
 			max = p
 		}
 	}
 	return max
+}
+
+func max_product_v2(s []int, n int) int {
+
+	if n > len(s) {
+		return 0
+	}
+	max := 0
+
+	for i, last := 0, 0; i+n <= len(s); i++ {
+		var p, skip int
+
+		ss := s[i : i+n]
+
+		first := s[i+n-1]
+
+		if first > last {
+			p, skip = product2(ss)
+		}
+
+		if skip > 0 {
+			i += skip
+			last = 0
+			continue
+		} /*else if p == 0 {
+			i += n - 1
+			last = 0
+			continue
+		} */
+
+		if p > max {
+			max = p
+		}
+
+		last = s[i]
+	}
+	return max
+}
+
+func max_product(s []int, n int) int {
+	if SIMPLE_MAX_PRODUCT {
+		return max_product_v1(s, n)
+	} else {
+		return max_product_v2(s, n)
+	}
 }
 
 func max_horizontals(grid [][]int, n int) int {
@@ -172,16 +250,29 @@ func diagonals(s [][]int, collect func([]int)) {
 		a, b := make([]int, maxlen), make([]int, maxlen)
 
 		// iterate over right descending diagonals
-		for r, c := i, 0; r < rows && c < cols; r, c = r+1, c+1 {
-			a[c] = s[r][c]
+		for r, c, x := i, 0, 0; r < rows && c < cols; r, c, x = r+1, c+1, x+1 {
+			a[x] = s[r][c]
 		}
-
-		for r, c := 0, i+1; r < rows && c < cols; r, c = r+1, c+1 {
-			b[c] = s[r][c]
-		}
-
 		collect(a)
+
+		for r, c, x := 0, i+1, 0; r < rows && c < cols; r, c, x = r+1, c+1, x+1 {
+			b[x] = s[r][c]
+		}
 		collect(b)
+
+		a1, b1 := make([]int, maxlen), make([]int, maxlen)
+
+		// do reverse diagonals
+		for r, c, x := rows-i-1, 0, 0; r >= 0 && c < cols; r, c, x = r-1, c+1, x+1 {
+			a1[x] = s[r][c]
+		}
+		collect(a1)
+
+		for r, c, x := rows-1, i+1, 0; r >= 0 && c < cols; r, c, x = r-1, c+1, x+1 {
+			b1[x] = s[r][c]
+		}
+		collect(b1)
+
 	}
 }
 
@@ -221,13 +312,19 @@ func showdiagonals(grid [][]int) {
 	printsep()
 }
 
-func main() {
-	//s := parse_grid(GRID)
+func Solve() int {
+	s := parse_grid(GRID)
+	h, v := max_horizontals(s, 4), max_verticals(s, 4)
+	d := max_diagonals(s, 4)
 
-	test := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
-	printgrid(test)
-	printgrid(transpose(test))
-	showdiagonals(test)
-	showdiagonals(transpose(test))
+	m := []int{h, v, d}
+
+	//fmt.Println(calls_to_product)
+	return max_product(m, 1)
+}
+
+func main() {
+
+	fmt.Println(Solve())
 
 }
