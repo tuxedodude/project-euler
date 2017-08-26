@@ -1,9 +1,7 @@
 /*
 https://projecteuler.net/problem=11
 In the 20×20 grid below, four numbers along a diagonal line have been marked in red.
-
 ...
-
 The product of these numbers is 26 × 63 × 78 × 14 = 1788696.
 What is the greatest product of four adjacent numbers in the same direction (up, down, left, right, or diagonally) in the 20×20 grid?
 */
@@ -14,6 +12,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	//"regexp"
 )
 
 const GRID string = `08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
@@ -37,6 +36,9 @@ const GRID string = `08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
 20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54
 01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48`
 
+// assumes rows are denoted by newlines
+// TO DO: split on white space only, then
+// make grid of r, c dimension
 func parse_grid(str string) [][]int {
 
 	s := strings.Split(str, "\n")
@@ -78,9 +80,9 @@ func max_product(s []int, n int) int {
 
 	max := 0
 	for i := 0; i+n <= len(s); i++ {
-		ss := s[i : i+n]
-		fmt.Println(ss)
-		p := product(s[i : i+n])
+
+		consec_n := s[i : i+n]
+		p := product(consec_n)
 		if p > max {
 			max = p
 		}
@@ -99,50 +101,133 @@ func max_horizontals(grid [][]int, n int) int {
 	return max
 }
 
-func transpose(grid [][]int) [][]int {
-	if len(grid) == 0 {
+func transpose(s [][]int) [][]int {
+
+	rows, cols := matrix_dim(s)
+
+	// empty matrix
+	if rows == 0 {
 		return [][]int{}
 	}
 
-	rows, cols := len(grid), 0
+	// make rows
+	T := make([][]int, cols)
 
-	// gather smallest column dimension
-	for i, ele := range grid {
-		dim := len(ele)
-		if dim == 0 {
-			return [][]int{}
-		} else if i == 0 || dim < cols {
-			cols = dim
-		}
+	// populate with empty columns
+	for i, _ := range T {
+		T[i] = make([]int, rows)
 	}
 
-	// allocate memory
-	gt := make([][]int, cols)
-	for i := 0; i < len(gt); i++ {
-		gt[i] = make([]int, rows)
-	}
-
+	// transpose
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
-			gt[j][i] = grid[i][j]
+			T[j][i] = s[i][j]
 		}
 	}
-	return gt
+	return T
 }
 
 func max_verticals(grid [][]int, n int) int {
 	return max_horizontals(transpose(grid), n)
 }
 
-func diagonals(grid [][]int) [][]int {
-	return [][]int{}
+// returns dimensions of this matrix
+func matrix_dim(s [][]int) (rows, cols int) {
+
+	r, c := len(s), 0
+
+	// gather smallest column dimension
+	for i, row := range s {
+		dim := len(row)
+		if dim == 0 {
+			c = 0
+			break
+		} else if i == 0 || dim < c {
+			c = dim
+		}
+	}
+
+	return r, c
+}
+
+func intmax(a, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func diagonals(s [][]int, collect func([]int)) {
+	//diagonals
+	//D := make([]int, 0)
+
+	rows, cols := matrix_dim(s)
+	maxlen := intmax(rows, cols)
+
+	// increment Diagonals, right descending, by rows
+	for i := 0; i < maxlen; i++ {
+
+		// diagonal, right descending
+		a, b := make([]int, maxlen), make([]int, maxlen)
+
+		// iterate over right descending diagonals
+		for r, c := i, 0; r < rows && c < cols; r, c = r+1, c+1 {
+			a[c] = s[r][c]
+		}
+
+		for r, c := 0, i+1; r < rows && c < cols; r, c = r+1, c+1 {
+			b[c] = s[r][c]
+		}
+
+		collect(a)
+		collect(b)
+	}
+}
+
+func max_diagonals(grid [][]int, n int) int {
+	max := 0
+
+	collector := func(s []int) {
+		p := max_product(s, n)
+		if p > max {
+			max = p
+		}
+	}
+
+	diagonals(grid, collector)
+
+	return max
+}
+
+func printgrid(grid [][]int) {
+	for _, row := range grid {
+		fmt.Println(row)
+	}
+	fmt.Println("----------")
+}
+
+func printsep() {
+	fmt.Println("----------")
+}
+
+func showdiagonals(grid [][]int) {
+
+	collector := func(s []int) {
+		fmt.Println(s)
+	}
+
+	diagonals(grid, collector)
+	printsep()
 }
 
 func main() {
-	s := parse_grid(GRID)
+	//s := parse_grid(GRID)
 
-	h := max_horizontals(s, 4)
-	v := max_verticals(s, 4)
+	test := [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
+	printgrid(test)
+	printgrid(transpose(test))
+	showdiagonals(test)
+	showdiagonals(transpose(test))
 
-	fmt.Println(h, v)
 }
