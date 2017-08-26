@@ -69,23 +69,7 @@ func countcalls() {
 	calls_to_product++
 }
 
-func product(s []int) int {
-	defer countcalls()
-	if len(s) == 0 {
-		return 0
-	}
-	p := 1
-	for i := len(s) - 1; i >= 0; i-- {
-		// any zero == 0 product
-		if s[i] == 0 {
-			return 0
-		}
-		p *= s[i]
-	}
-	return p
-}
-
-func product2(s []int) (prod, skip int) {
+func product(s []int) (prod, skip int) {
 	defer countcalls()
 
 	if len(s) == 0 {
@@ -114,7 +98,7 @@ func max_product_v1(s []int, n int) int {
 
 		consec_n := s[i : i+n]
 		//fmt.Println(consec_n)
-		p := product(consec_n)
+		p, _ := product(consec_n)
 
 		if p > max {
 			max = p
@@ -138,7 +122,7 @@ func max_product_v2(s []int, n int) int {
 		first := s[i+n-1]
 
 		if first > last {
-			p, skip = product2(ss)
+			p, skip = product(ss)
 		}
 
 		if skip > 0 {
