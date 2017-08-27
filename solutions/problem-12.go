@@ -25,9 +25,57 @@ package main
 
 import (
 	"fmt"
+	"math"
+	//	"sort"
 )
 
-func generate_triangle_numbers(callback func(int, int) bool) {
+const DEBUG bool = true
+
+var sieve_memo []int64 = []int64{}
+var sieve_memo_n int = 1
+
+var memo_calls int = 0
+var new_calls int = 0
+
+//runs callback as each prime is generated, up to n inclusive
+func sieve(n int) []int64 {
+
+	/*if n < 2 {
+		return []int{}
+	}*/
+
+	if n <= sieve_memo_n {
+		memo_calls++
+		return sieve_memo
+	}
+	new_calls++
+
+	//make sieve
+	s, primes := make([]bool, n+1), make([]int64, 0)
+
+	for i := 2; i <= n; i++ {
+		if s[i] == false { //this element is prime
+
+			primes = append(primes, int64(i))
+
+			//mark all multiples
+			for j := 1; j*i <= n; j++ {
+				s[i*j] = true
+			}
+		}
+	}
+
+	sieve_memo = primes
+	sieve_memo_n = n
+
+	return primes
+}
+
+func triangle(x int64) int64 {
+	return x * (x + 1) / 2
+}
+
+/*func generate_triangle_numbers(callback func(int, int) bool) {
 	for i := 1; ; i++ {
 		x := i * (i + 1) / 2
 		if callback(x, i) {
@@ -42,12 +90,99 @@ func test_triangle(n int) {
 		return i > n
 	}
 	generate_triangle_numbers(f)
+}*/
+
+func factors_of(N int64) int {
+
+	sqrtn := int(math.Sqrt(float64(N)))
+
+	// we just need prime factors of n
+	primes := sieve(sqrtn)
+
+	factors := make(map[int64]bool)
+	factors[1] = true
+	factors[N] = true
+
+	var _fac func(int64)
+
+	_fac = func(n1 int64) {
+
+		for i := 0; i < len(primes) && primes[i] < N; i++ {
+			p := primes[i]
+
+			// divisible by prime factor
+			if N%p == 0 {
+				factors[p] = true
+
+				// quotient
+				f := N / p
+
+				// is f a member of the map?
+				_, f_is_factor := factors[f]
+
+				// not in the map, so add to map
+				// and recursively compute factors of that!
+				if !f_is_factor {
+					factors[f] = true
+					_fac(f)
+				}
+
+			}
+		}
+	}
+
+	// gather factors
+	_fac(N)
+
+	/*if DEBUG {
+		s := make([]int, len(factors))
+		i := 0
+		for k, _ := range factors {
+			s[i] = k
+			i++
+		}
+		sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
+		fmt.Println(s)
+	}*/
+
+	// count keys (factors)
+	return len(factors)
 }
 
-func Solve() {
+func Solve(n int) int64 {
+	sieve(999999)
 
+	//var solution int
+	/*generate_triangle_numbers(
+	func(x, i int) bool {
+		if factors_of(x) > n {
+			solution = x
+			return true
+		} else {
+			return false
+		}
+	})*/
+
+	num_factors := 0
+	var i, t int64 = 1, 0
+	var last_t int64
+
+	for ; num_factors < n; i = i*5/3 + 1 {
+		t = triangle(i)
+		fmt.Println("i =", i, ", t =", t)
+		num_factors = factors_of(t)
+
+		if num_factors < n {
+			last_t = t
+		}
+	}
+	fmt.Println("Between", t, "and", last_t)
+	fmt.Println("Memoized calls:", memo_calls, ", New calls to sieve:", new_calls)
+	return t
 }
 
 func main() {
-	test_triangle(50)
+	fmt.Println(Solve(18))
+
+	//fmt.Println(factors_of(134225920))
 }
