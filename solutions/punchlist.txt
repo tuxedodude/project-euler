@@ -3,3 +3,7 @@ Sieve of atkins
 Optimized sieve of eratosthenes
 Segmented sieve of eratosthenes
 Prime # library
+
+modify Problem 67 to slurp the resource file (or any file)
+error reporting for 67 (try/catch etc.)
+Test problem 67
